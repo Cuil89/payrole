@@ -233,7 +233,7 @@ class _ReimbursementPageState extends State<ReimbursementPage> {
 
   Widget _statBox(String title, String val, Color textC, Color bgC) {
     return Container(
-      width: 240,
+      constraints: const BoxConstraints(minWidth: 200, maxWidth: 320),
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: bgC,
@@ -245,7 +245,11 @@ class _ReimbursementPageState extends State<ReimbursementPage> {
         children: [
           Text(title, style: TextStyle(fontSize: 12, color: textC, fontWeight: FontWeight.w500)),
           const SizedBox(height: 6),
-          Text(val, style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700, color: textC)),
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerLeft,
+            child: Text(val, style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700, color: textC)),
+          ),
         ],
       ),
     );
@@ -264,7 +268,7 @@ class _ReimbursementPageState extends State<ReimbursementPage> {
       builder: (context) => Dialog(
         child: ConstrainedBox(
           constraints: const BoxConstraints(maxWidth: 480),
-          child: Padding(
+          child: SingleChildScrollView(
             padding: const EdgeInsets.all(24),
             child: Form(
               key: formKey,
@@ -275,13 +279,15 @@ class _ReimbursementPageState extends State<ReimbursementPage> {
                   const Text('Ajukan Reimbursement Baru', style: AppText.sectionTitle),
                   const SizedBox(height: 16),
                   DropdownButtonFormField<String>(
+                    isExpanded: true,
                     initialValue: selectedEmp.isNotEmpty ? selectedEmp : null,
                     decoration: const InputDecoration(labelText: 'Karyawan'),
-                    items: employees.map((e) => DropdownMenuItem(value: e.id, child: Text(e.name))).toList(),
+                    items: employees.map((e) => DropdownMenuItem(value: e.id, child: Text(e.name, overflow: TextOverflow.ellipsis))).toList(),
                     onChanged: (v) => selectedEmp = v ?? selectedEmp,
                   ),
                   const SizedBox(height: 12),
                   DropdownButtonFormField<String>(
+                    isExpanded: true,
                     initialValue: selectedCat,
                     decoration: const InputDecoration(labelText: 'Kategori Pengeluaran'),
                     items: kReimbursementCategories.map((c) => DropdownMenuItem(value: c, child: Text(c))).toList(),
@@ -302,14 +308,15 @@ class _ReimbursementPageState extends State<ReimbursementPage> {
                     validator: (v) => v == null || v.trim().length < 3 ? 'Keterangan minimal 3 karakter' : null,
                   ),
                   const SizedBox(height: 24),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.end,
+                  Wrap(
+                    alignment: WrapAlignment.end,
+                    spacing: 10,
+                    runSpacing: 8,
                     children: [
                       OutlinedButton(
                         onPressed: () => Navigator.of(context).pop(),
                         child: const Text('Batal'),
                       ),
-                      const SizedBox(width: 10),
                       ElevatedButton(
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppColors.primary,

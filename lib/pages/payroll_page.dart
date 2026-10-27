@@ -1,4 +1,6 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
+import 'package:share_plus/share_plus.dart';
 
 import '../core/app_icons.dart';
 import '../core/format.dart';
@@ -10,9 +12,9 @@ import '../services/pdf_service.dart';
 import '../widgets/app_card.dart';
 import '../widgets/badges.dart';
 import '../widgets/modals/add_loan_modal.dart';
+import '../widgets/modals/cash_denominations_modal.dart';
 import '../widgets/modals/edit_components_modal.dart';
 import '../widgets/modals/payslip_modal.dart';
-import '../widgets/modals/process_payroll_modal.dart';
 
 class PayrollPage extends StatefulWidget {
   const PayrollPage({super.key, required this.store});
@@ -27,6 +29,7 @@ class _PayrollPageState extends State<PayrollPage> {
   String _searchQuery = '';
   String _departmentFilter = 'Semua';
   String _statusFilter = 'Semua';
+  String _methodFilter = 'Semua';
 
   final Set<String> _selectedPayrollIds = {};
   final Set<String> _selectedLoanIds = {};
@@ -53,7 +56,10 @@ class _PayrollPageState extends State<PayrollPage> {
           final matchesStatus = _statusFilter == 'Semua' ||
               l.status.name == _statusFilter;
 
-          return matchesQuery && matchesDept && matchesStatus;
+          final matchesMethod = _methodFilter == 'Semua' ||
+              l.employee.metodeBayar.label.toLowerCase().contains(_methodFilter.toLowerCase());
+
+          return matchesQuery && matchesDept && matchesStatus && matchesMethod;
         }).toList();
 
         return LayoutBuilder(
@@ -114,57 +120,138 @@ class _PayrollPageState extends State<PayrollPage> {
   // A. Header Section
   // ---------------------------------------------------------------------------
   Widget _buildHeader(BuildContext context, bool isMobile) {
+    final recap = widget.store.activeRecap;
+    final role = widget.store.currentUser.role;
+
     return Wrap(
       spacing: 16,
       runSpacing: 16,
       alignment: WrapAlignment.spaceBetween,
       crossAxisAlignment: WrapCrossAlignment.center,
       children: [
-        const Column(
+        Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text('Penggajian', style: AppText.pageTitle),
-            SizedBox(height: 4),
+            const Text('Rekapitulasi & Penggajian Mingguan', style: AppText.pageTitle),
+            const SizedBox(height: 4),
             Text(
-              'Kelola gaji dengan akurat. Pastikan tim dibayar tepat waktu.',
+              'Status: ${recap.status.label} · Periode ${widget.store.periodLabel}',
               style: AppText.small,
             ),
           ],
         ),
         Wrap(
-          spacing: 12,
+          spacing: 10,
           runSpacing: 8,
           children: [
+            // Cash Denominations Calculator Button
+            OutlinedButton.icon(
+              style: OutlinedButton.styleFrom(
+                foregroundColor: AppColors.primary700,
+                side: const BorderSide(color: AppColors.emerald200),
+                backgroundColor: AppColors.emerald50,
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 11),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              ),
+              icon: const Icon(AppIcons.payroll, size: 16),
+              label: const Text('Pecahan Uang Amplop', style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700)),
+              onPressed: () => CashDenominationsModal.show(context, widget.store),
+            ),
+
             // Export Button
             OutlinedButton.icon(
               style: OutlinedButton.styleFrom(
                 foregroundColor: AppColors.text2,
                 side: const BorderSide(color: AppColors.borderStrong),
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
-                ),
+                padding: const EdgeInsets.symmetric(horizontal: 13, vertical: 11),
+                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
               ),
               icon: const Icon(AppIcons.export, size: 16),
-              label: const Text('Ekspor laporan', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
+              label: const Text('Ekspor', style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w600)),
               onPressed: () => _showExportMenu(context),
             ),
 
-            // Process Payroll Button
-            ElevatedButton.icon(
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.primary,
-                foregroundColor: Colors.white,
-                padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 11),
-                elevation: 0,
-                shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(10),
+            // DYNAMIC 4-STAGE STATE MACHINE ACTION BUTTONS
+            if (recap.isLocked) ...[
+              if (role == UserRole.pemilik || role == UserRole.superAdmin)
+                ElevatedButton.icon(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.rose600,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  ),
+                  icon: const Icon(AppIcons.lock, size: 16),
+                  label: const Text('Buka Kunci Tutup Minggu', style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700)),
+                  onPressed: () => _promptUnlockPeriod(recap.id),
                 ),
+            ] else if (recap.status == StatusRekap.diverifikasiMandor) ...[
+              if (role == UserRole.pemilik || role == UserRole.superAdmin)
+                ElevatedButton.icon(
+                  style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.primary,
+                    foregroundColor: Colors.white,
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 11),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  ),
+                  icon: const Icon(AppIcons.checkCircle, size: 16),
+                  label: const Text('Setujui Pembayaran (Owner)', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700)),
+                  onPressed: () {
+                    widget.store.ownerApproveWeeklyPayroll(recap.id);
+                    ScaffoldMessenger.of(context).showSnackBar(
+                      const SnackBar(content: Text('Gaji mingguan telah disetujui Pemilik (Siap Dicairkan)!')),
+                    );
+                  },
+                )
+              else
+                OutlinedButton.icon(
+                  style: OutlinedButton.styleFrom(
+                    foregroundColor: AppColors.amber700,
+                    side: const BorderSide(color: AppColors.amber200),
+                    backgroundColor: AppColors.amber50,
+                    padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 11),
+                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                  ),
+                  icon: const Icon(AppIcons.clock, size: 16),
+                  label: const Text('Menunggu Persetujuan Pemilik', style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700)),
+                  onPressed: null,
+                ),
+            ] else if (recap.status == StatusRekap.disetujuiPemilik) ...[
+              ElevatedButton.icon(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 11),
+                  elevation: 0,
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                ),
+                icon: const Icon(AppIcons.process, size: 16),
+                label: const Text('Cairkan Gaji & Kunci Periode', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w700)),
+                onPressed: () {
+                  widget.store.financeDisburseWeeklyPayroll(recap.id);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Gaji berhasil dicairkan! Saldo kasbon dipotong otomatis & periode terkunci.')),
+                  );
+                },
               ),
-              icon: const Icon(AppIcons.process, size: 16),
-              label: const Text('Proses payroll', style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600)),
-              onPressed: () => ProcessPayrollModal.show(context, widget.store),
-            ),
+            ] else ...[
+              ElevatedButton.icon(
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: AppColors.primary,
+                  foregroundColor: Colors.white,
+                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 11),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                ),
+                icon: const Icon(AppIcons.checkCircle, size: 16),
+                label: const Text('Kunci Verifikasi Mandor', style: TextStyle(fontSize: 12.5, fontWeight: FontWeight.w700)),
+                onPressed: () {
+                  widget.store.mandorSubmitWeeklyVerification(recap.id);
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Verifikasi mandor berhasil dikunci & diajukan ke Pemilik!')),
+                  );
+                },
+              ),
+            ],
           ],
         ),
       ],
@@ -941,6 +1028,32 @@ class _PayrollPageState extends State<PayrollPage> {
                       ),
                     ),
 
+                    // Payment Method Dropdown
+                    Container(
+                      height: 38,
+                      padding: const EdgeInsets.symmetric(horizontal: 10),
+                      decoration: BoxDecoration(
+                        border: Border.all(color: AppColors.borderStrong),
+                        borderRadius: BorderRadius.circular(10),
+                        color: Colors.white,
+                      ),
+                      child: DropdownButtonHideUnderline(
+                        child: DropdownButton<String>(
+                          value: _methodFilter,
+                          style: const TextStyle(fontSize: 12.5, color: AppColors.text2),
+                          items: const [
+                            DropdownMenuItem(value: 'Semua', child: Text('Semua metode bayar')),
+                            DropdownMenuItem(value: 'Tunai', child: Text('Tunai (Amplop)')),
+                            DropdownMenuItem(value: 'Transfer', child: Text('Transfer Bank')),
+                            DropdownMenuItem(value: 'E-Wallet', child: Text('E-Wallet')),
+                          ],
+                          onChanged: (val) {
+                            if (val != null) setState(() => _methodFilter = val);
+                          },
+                        ),
+                      ),
+                    ),
+
                     // Atur Kolom Button
                     OutlinedButton.icon(
                       style: OutlinedButton.styleFrom(
@@ -1093,6 +1206,16 @@ class _PayrollPageState extends State<PayrollPage> {
                                 ),
                               ),
                               const PopupMenuItem(
+                                value: 'whatsapp',
+                                child: Row(
+                                  children: [
+                                    Icon(AppIcons.externalLink, size: 16, color: AppColors.primary700),
+                                    SizedBox(width: 8),
+                                    Text('Kirim via WhatsApp'),
+                                  ],
+                                ),
+                              ),
+                              const PopupMenuItem(
                                 value: 'edit',
                                 child: Row(
                                   children: [
@@ -1130,68 +1253,55 @@ class _PayrollPageState extends State<PayrollPage> {
                       ],
                     );
                   }),
+
+                  // Table Total Summary Row directly inside DataTable for perfect column alignment
+                  DataRow(
+                    color: const WidgetStatePropertyAll(AppColors.slate100),
+                    cells: [
+                      const DataCell(SizedBox()),
+                      const DataCell(
+                        Text(
+                          'Total Penggajian',
+                          style: TextStyle(
+                            fontSize: 13.5,
+                            fontWeight: FontWeight.w800,
+                            color: AppColors.textStrong,
+                          ),
+                        ),
+                      ),
+                      DataCell(
+                        Text(
+                          Fmt.rupiah(t.base),
+                          style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13),
+                        ),
+                      ),
+                      DataCell(
+                        Text(
+                          Fmt.rupiah(t.allowance),
+                          style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13),
+                        ),
+                      ),
+                      DataCell(
+                        Text(
+                          Fmt.rupiah(t.deduction),
+                          style: const TextStyle(fontWeight: FontWeight.w800, fontSize: 13),
+                        ),
+                      ),
+                      DataCell(
+                        Text(
+                          Fmt.rupiah(t.net),
+                          style: const TextStyle(
+                            fontWeight: FontWeight.w800,
+                            fontSize: 14,
+                            color: AppColors.primary,
+                          ),
+                        ),
+                      ),
+                      const DataCell(SizedBox()),
+                      const DataCell(SizedBox()),
+                    ],
+                  ),
                 ],
-              ),
-            ),
-          ),
-
-          const Divider(),
-
-          // Table Total Summary Footer Row
-          SingleChildScrollView(
-            scrollDirection: Axis.horizontal,
-            child: ConstrainedBox(
-              constraints: const BoxConstraints(minWidth: 960),
-              child: Padding(
-                padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 14),
-                child: Row(
-                  children: [
-                    const SizedBox(width: 48), // checkbox width
-                    const SizedBox(
-                      width: 200,
-                      child: Text(
-                        'Total penggajian',
-                        style: TextStyle(
-                          fontSize: 13.5,
-                          fontWeight: FontWeight.w700,
-                          color: AppColors.textStrong,
-                        ),
-                      ),
-                    ),
-                    SizedBox(
-                      width: 130,
-                      child: Text(
-                        Fmt.rupiah(t.base),
-                        style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
-                      ),
-                    ),
-                    SizedBox(
-                      width: 130,
-                      child: Text(
-                        Fmt.rupiah(t.allowance),
-                        style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
-                      ),
-                    ),
-                    SizedBox(
-                      width: 130,
-                      child: Text(
-                        Fmt.rupiah(t.deduction),
-                        style: const TextStyle(fontWeight: FontWeight.w700, fontSize: 13),
-                      ),
-                    ),
-                    SizedBox(
-                      width: 140,
-                      child: Text(
-                        Fmt.rupiah(t.net),
-                        style: const TextStyle(
-                          fontWeight: FontWeight.w800,
-                          fontSize: 14,
-                          color: AppColors.primary,
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
               ),
             ),
           ),
@@ -1512,6 +1622,9 @@ class _PayrollPageState extends State<PayrollPage> {
       case 'slip':
         PayslipModal.show(context, widget.store, line);
         break;
+      case 'whatsapp':
+        _sendWhatsAppSlip(line);
+        break;
       case 'edit':
         EditComponentsModal.show(context, widget.store, line.employee);
         break;
@@ -1522,6 +1635,168 @@ class _PayrollPageState extends State<PayrollPage> {
         widget.store.flagForReview(line.employee.id);
         break;
     }
+  }
+
+  void _sendWhatsAppSlip(PayrollLine line) {
+    final emp = line.employee;
+    final phone = emp.phone.replaceAll(RegExp(r'[^0-9]'), '');
+    final targetPhone = phone.startsWith('0') ? '62${phone.substring(1)}' : phone;
+
+    final msg = '''
+*SLIP GAJI RESMI KONVEKSI BERKAH*
+No. Slip : SLIP/2026/W43-${emp.id}
+Periode  : 19 - 24 Oktober 2026
+
+Karyawan : ${emp.name}
+Bagian   : ${emp.department} (${emp.tipeGaji.label})
+----------------------------------------
+*PENERIMAAN:*
+• Upah Pokok/Harian  : ${Fmt.rupiah(line.base)}
+• Tunjangan & Lembur : ${Fmt.rupiah(line.allowance)}
+*Total Upah Kotor    : ${Fmt.rupiah(line.gross)}*
+
+*POTONGAN:*
+• Cicilan Kasbon     : -${Fmt.rupiah(line.loanDeduction)}
+• Potongan Lain      : -${Fmt.rupiah(line.statutory)}
+----------------------------------------
+*TOTAL DITERIMA (THP): ${Fmt.rupiah(line.net)}*
+Metode Pencairan     : ${emp.metodeBayar.label}
+Status               : *LUNAS & DISETUJUI PEMILIK*
+''';
+
+    showDialog<void>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: Row(
+            children: [
+              const Icon(AppIcons.externalLink, color: AppColors.primary),
+              const SizedBox(width: 8),
+              Text('Kirim Slip: ${emp.name}'),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text('Nomor WhatsApp: $targetPhone', style: const TextStyle(fontWeight: FontWeight.w700)),
+              const SizedBox(height: 10),
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: AppColors.slate100,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: Text(
+                  msg,
+                  style: const TextStyle(fontSize: 11, fontFamily: 'monospace'),
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Tutup'),
+            ),
+            OutlinedButton.icon(
+              icon: const Icon(AppIcons.fileText, size: 15),
+              label: const Text('Salin Teks'),
+              onPressed: () {
+                Clipboard.setData(ClipboardData(text: msg));
+                Navigator.of(context).pop();
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Teks slip gaji tersalin ke clipboard!')),
+                );
+              },
+            ),
+            ElevatedButton.icon(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.primary,
+                foregroundColor: Colors.white,
+              ),
+              icon: const Icon(AppIcons.export, size: 15),
+              label: const Text('Bagikan WhatsApp'),
+              onPressed: () {
+                Navigator.of(context).pop();
+                SharePlus.instance.share(
+                  ShareParams(
+                    text: msg,
+                    subject: 'Slip Gaji ${emp.name} - Konveksi Berkah',
+                  ),
+                );
+              },
+            ),
+          ],
+        );
+      },
+    );
+  }
+
+  void _promptUnlockPeriod(String rekapId) {
+    final reasonCtrl = TextEditingController();
+
+    showDialog<void>(
+      context: context,
+      builder: (context) {
+        return AlertDialog(
+          title: const Row(
+            children: [
+              Icon(AppIcons.lock, color: AppColors.rose600),
+              SizedBox(width: 8),
+              Text('Buka Kunci Tutup Minggu'),
+            ],
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              const Text(
+                'Perhatian Pemilik: Pembukaan kunci periode akan terekam ke dalam Immutable Security Audit Log. Masukkan alasan resmi Anda:',
+                style: TextStyle(fontSize: 12, color: AppColors.textMuted),
+              ),
+              const SizedBox(height: 14),
+              TextField(
+                controller: reasonCtrl,
+                maxLines: 2,
+                decoration: const InputDecoration(
+                  labelText: 'Alasan Wajib Buka Kunci',
+                  hintText: 'Misal: Penyesuaian koreksi hasil potong SPK-101...',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(context).pop(),
+              child: const Text('Batal'),
+            ),
+            ElevatedButton(
+              style: ElevatedButton.styleFrom(
+                backgroundColor: AppColors.rose600,
+                foregroundColor: Colors.white,
+              ),
+              onPressed: () {
+                final reason = reasonCtrl.text.trim();
+                if (reason.length < 5) {
+                  ScaffoldMessenger.of(context).showSnackBar(
+                    const SnackBar(content: Text('Alasan wajib diisi minimal 5 karakter.')),
+                  );
+                  return;
+                }
+                widget.store.ownerUnlockPeriod(rekapId, reason);
+                Navigator.of(context).pop();
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(content: Text('Periode Tutup Minggu berhasil dibuka kembali untuk revisi.')),
+                );
+              },
+              child: const Text('Buka Kunci Sekarang'),
+            ),
+          ],
+        );
+      },
+    );
   }
 
   void _handleLoanAction(String action, Loan loan) {

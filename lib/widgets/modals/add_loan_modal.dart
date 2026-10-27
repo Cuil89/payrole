@@ -178,6 +178,7 @@ class _AddLoanModalState extends State<AddLoanModal> {
                 const Text('Karyawan', style: AppText.bodyStrong),
                 const SizedBox(height: 6),
                 DropdownButtonFormField<String>(
+                  isExpanded: true,
                   initialValue: _selectedEmployeeId.isNotEmpty ? _selectedEmployeeId : null,
                   decoration: const InputDecoration(
                     prefixIcon: Icon(AppIcons.employees, size: 18),
@@ -185,7 +186,10 @@ class _AddLoanModalState extends State<AddLoanModal> {
                   items: employees.map((e) {
                     return DropdownMenuItem(
                       value: e.id,
-                      child: Text('${e.name} (${e.id} · ${e.department})'),
+                      child: Text(
+                        '${e.name} (${e.id} · ${e.department})',
+                        overflow: TextOverflow.ellipsis,
+                      ),
                     );
                   }).toList(),
                   onChanged: (val) {
@@ -304,8 +308,10 @@ class _AddLoanModalState extends State<AddLoanModal> {
                 const SizedBox(height: 24),
 
                 // Action Buttons
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
+                Wrap(
+                  alignment: WrapAlignment.end,
+                  spacing: 12,
+                  runSpacing: 8,
                   children: [
                     OutlinedButton(
                       style: OutlinedButton.styleFrom(
@@ -317,7 +323,6 @@ class _AddLoanModalState extends State<AddLoanModal> {
                       onPressed: () => Navigator.of(context).pop(),
                       child: const Text('Batal'),
                     ),
-                    const SizedBox(width: 12),
                     ElevatedButton.icon(
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.primary,

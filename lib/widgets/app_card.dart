@@ -6,7 +6,7 @@ class AppCard extends StatelessWidget {
   const AppCard({
     super.key,
     required this.child,
-    this.padding = const EdgeInsets.all(20),
+    this.padding,
     this.backgroundColor = AppColors.surface,
     this.borderColor = AppColors.border,
     this.borderRadius,
@@ -14,7 +14,7 @@ class AppCard extends StatelessWidget {
   });
 
   final Widget child;
-  final EdgeInsetsGeometry padding;
+  final EdgeInsetsGeometry? padding;
   final Color backgroundColor;
   final Color borderColor;
   final BorderRadiusGeometry? borderRadius;
@@ -23,6 +23,9 @@ class AppCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final radius = borderRadius ?? BorderRadius.circular(AppRadius.card);
+    final isMobile = MediaQuery.sizeOf(context).width < 600;
+    final effectivePadding = padding ?? EdgeInsets.all(isMobile ? 14 : 20);
+
     final card = Container(
       decoration: BoxDecoration(
         color: backgroundColor,
@@ -40,10 +43,10 @@ class AppCard extends StatelessWidget {
         color: Colors.transparent,
         borderRadius: radius,
         child: InkWell(
-          borderRadius: radius as BorderRadius,
+          borderRadius: radius is BorderRadius ? radius : BorderRadius.circular(AppRadius.card),
           onTap: onTap,
           child: Padding(
-            padding: padding,
+            padding: effectivePadding,
             child: child,
           ),
         ),

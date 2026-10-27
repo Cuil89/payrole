@@ -2,17 +2,21 @@ import 'package:flutter/material.dart';
 
 import '../core/app_icons.dart';
 import '../core/theme.dart';
-import 'app_card.dart';
+import '../data/models.dart';
 
 enum AppTab {
   summary('Ringkasan', AppIcons.summary),
-  employees('Karyawan', AppIcons.employees),
-  attendance('Kehadiran', AppIcons.attendance),
-  payroll('Penggajian', AppIcons.payroll),
-  reimbursement('Reimbursement', AppIcons.reimbursement),
-  reports('Laporan', AppIcons.reports),
+  superAdmin('Pusat Kendali', AppIcons.shield),
+  masterTarif('Master Tarif & HPP', AppIcons.adjust),
+  employees('Data Karyawan', AppIcons.employees),
+  attendance('Kehadiran & Lembur', AppIcons.attendance),
+  payroll('Rekap & Penggajian', AppIcons.payroll),
+  mandorPortal('Portal Mandor', AppIcons.process),
+  karyawanPortal('Portal Karyawan', AppIcons.fileText),
+  reimbursement('Kasbon & Reimburse', AppIcons.reimbursement),
+  reports('Laporan & Ekspor', AppIcons.reports),
   settings('Pengaturan', AppIcons.settings),
-  help('Pusat bantuan', AppIcons.help);
+  help('Pusat Bantuan', AppIcons.help);
 
   const AppTab(this.label, this.icon);
   final String label;
@@ -25,6 +29,7 @@ class Sidebar extends StatelessWidget {
     required this.currentTab,
     required this.onSelectTab,
     required this.companyName,
+    required this.currentUser,
     this.onLogout,
     this.onHelpClick,
     this.isDrawer = false,
@@ -33,6 +38,7 @@ class Sidebar extends StatelessWidget {
   final AppTab currentTab;
   final ValueChanged<AppTab> onSelectTab;
   final String companyName;
+  final UserAccount currentUser;
   final VoidCallback? onLogout;
   final VoidCallback? onHelpClick;
   final bool isDrawer;
@@ -93,33 +99,32 @@ class Sidebar extends StatelessWidget {
               ),
             ),
 
-            // Workspace Switcher
+            // Workspace & Active Role Box
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16),
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
                 decoration: BoxDecoration(
-                  color: AppColors.surface,
+                  color: AppColors.slate100,
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(color: AppColors.borderStrong),
                 ),
                 child: Row(
                   children: [
                     Container(
-                      width: 28,
-                      height: 28,
+                      width: 30,
+                      height: 30,
                       decoration: BoxDecoration(
-                        color: AppColors.slate100,
-                        borderRadius: BorderRadius.circular(7),
-                        border: Border.all(color: AppColors.borderStrong),
+                        color: AppColors.primary,
+                        borderRadius: BorderRadius.circular(8),
                       ),
                       alignment: Alignment.center,
                       child: Text(
-                        companyName.isNotEmpty ? companyName[0].toUpperCase() : 'N',
+                        companyName.isNotEmpty ? companyName[0].toUpperCase() : 'K',
                         style: const TextStyle(
-                          fontSize: 13,
+                          fontSize: 14,
                           fontWeight: FontWeight.w700,
-                          color: AppColors.textStrong,
+                          color: Colors.white,
                         ),
                       ),
                     ),
@@ -131,29 +136,28 @@ class Sidebar extends StatelessWidget {
                           Text(
                             companyName,
                             style: const TextStyle(
-                              fontSize: 13,
-                              fontWeight: FontWeight.w600,
+                              fontSize: 12.5,
+                              fontWeight: FontWeight.w700,
                               color: AppColors.textStrong,
                               height: 1.2,
                             ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
                           ),
-                          const Text(
-                            'Perusahaan',
-                            style: TextStyle(
+                          const SizedBox(height: 1),
+                          Text(
+                            currentUser.roleBadgeLabel,
+                            style: const TextStyle(
                               fontSize: 11,
-                              color: AppColors.textMuted,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.primary700,
                               height: 1.2,
                             ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                           ),
                         ],
                       ),
-                    ),
-                    const Icon(
-                      AppIcons.chevronsUpDown,
-                      size: 16,
-                      color: AppColors.textSubtle,
                     ),
                   ],
                 ),
@@ -162,151 +166,77 @@ class Sidebar extends StatelessWidget {
 
             const SizedBox(height: 16),
 
-            // Menu Groups Scrollable
+            // Role-Isolated Navigation Menus
             Expanded(
               child: ListView(
                 padding: const EdgeInsets.symmetric(horizontal: 12),
-                children: [
-                  _groupTitle('RUANG KERJA'),
-                  _navItem(AppTab.summary),
-                  _navItem(AppTab.employees),
-                  _navItem(AppTab.attendance),
-                  _navItem(AppTab.payroll),
-                  _navItem(AppTab.reimbursement),
-                  _navItem(AppTab.reports),
-                  const SizedBox(height: 16),
-                  _groupTitle('PREFERENSI'),
-                  _navItem(AppTab.settings),
-                  _navItem(AppTab.help),
-                  const SizedBox(height: 16),
-                ],
+                children: _buildRoleSpecificMenuItems(),
               ),
             ),
 
-            // Footer Sidebar
+            // Footer Help Banner
             Padding(
               padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
               child: Column(
                 children: [
-                  // Help Banner
                   Container(
-                    padding: const EdgeInsets.all(14),
+                    padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: const Color(0xFFF0FDF4), // emerald-50/70
-                      borderRadius: BorderRadius.circular(14),
-                      border: Border.all(color: const Color(0xFFDCFCE7)),
+                      color: AppColors.emerald50,
+                      borderRadius: BorderRadius.circular(12),
+                      border: Border.all(color: AppColors.emerald200),
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Row(
+                        const Row(
                           children: [
-                            Container(
-                              padding: const EdgeInsets.all(6),
-                              decoration: BoxDecoration(
-                                color: AppColors.emerald100,
-                                borderRadius: BorderRadius.circular(8),
-                              ),
-                              child: const Icon(
-                                AppIcons.support,
-                                size: 16,
-                                color: AppColors.primary,
-                              ),
-                            ),
-                            const SizedBox(width: 8),
-                            const Expanded(
-                              child: Text(
-                                'Butuh bantuan payroll?',
-                                style: TextStyle(
-                                  fontSize: 12,
-                                  fontWeight: FontWeight.w600,
-                                  color: AppColors.textStrong,
-                                ),
+                            Icon(AppIcons.shield, size: 15, color: AppColors.primary700),
+                            SizedBox(width: 6),
+                            Text(
+                              'Akses Terisolasi Server',
+                              style: TextStyle(
+                                fontSize: 11.5,
+                                fontWeight: FontWeight.w700,
+                                color: AppColors.primaryDark,
                               ),
                             ),
                           ],
                         ),
-                        const SizedBox(height: 6),
-                        const Text(
-                          'Tim kami siap membantu penggajian Anda.',
-                          style: TextStyle(
-                            fontSize: 11,
-                            color: AppColors.textMuted,
-                            height: 1.3,
-                          ),
-                        ),
-                        const SizedBox(height: 8),
-                        InkWell(
-                          onTap: onHelpClick ?? () => onSelectTab(AppTab.help),
-                          child: const Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Text(
-                                'Hubungi kami',
-                                style: TextStyle(
-                                  fontSize: 11.5,
-                                  fontWeight: FontWeight.w600,
-                                  color: AppColors.primary700,
-                                ),
-                              ),
-                              SizedBox(width: 3),
-                              Icon(
-                                AppIcons.externalLink,
-                                size: 13,
-                                color: AppColors.primary700,
-                              ),
-                            ],
-                          ),
+                        const SizedBox(height: 4),
+                        Text(
+                          'Sesi: ${currentUser.name}',
+                          style: const TextStyle(fontSize: 11, color: AppColors.text2),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
                       ],
                     ),
                   ),
-
-                  const SizedBox(height: 12),
-                  const Divider(color: AppColors.borderStrong),
                   const SizedBox(height: 8),
-
-                  // User Profile Bar
-                  Row(
-                    children: [
-                      const InitialsAvatar(
-                        initials: 'AP',
-                        size: 34,
-                        backgroundColor: AppColors.emerald100,
-                        textColor: AppColors.primary,
-                      ),
-                      const SizedBox(width: 10),
-                      const Expanded(
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
+                  if (onLogout != null)
+                    InkWell(
+                      onTap: onLogout,
+                      borderRadius: BorderRadius.circular(8),
+                      child: const Padding(
+                        padding: EdgeInsets.symmetric(vertical: 8),
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.center,
                           children: [
+                            Icon(AppIcons.logout, size: 15, color: AppColors.rose600),
+                            SizedBox(width: 6),
                             Text(
-                              'Anita Putri',
+                              'Kunci / Logout',
                               style: TextStyle(
-                                fontSize: 13,
+                                fontSize: 12,
                                 fontWeight: FontWeight.w600,
-                                color: AppColors.textStrong,
-                              ),
-                            ),
-                            Text(
-                              'Admin HR',
-                              style: TextStyle(
-                                fontSize: 11,
-                                color: AppColors.textMuted,
+                                color: AppColors.rose600,
                               ),
                             ),
                           ],
                         ),
                       ),
-                      IconButton(
-                        icon: const Icon(AppIcons.logout, size: 18),
-                        color: AppColors.textSubtle,
-                        tooltip: 'Kunci Sesi / Keluar',
-                        onPressed: onLogout,
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 6),
+                    ),
                 ],
               ),
             ),
@@ -316,14 +246,78 @@ class Sidebar extends StatelessWidget {
     );
   }
 
+  List<Widget> _buildRoleSpecificMenuItems() {
+    switch (currentUser.role) {
+      case UserRole.superAdmin:
+        return [
+          _groupTitle('KONTROL SISTEM'),
+          _navItem(AppTab.superAdmin),
+          _navItem(AppTab.employees),
+          _navItem(AppTab.payroll),
+          _navItem(AppTab.reports),
+          const SizedBox(height: 16),
+          _groupTitle('PENGATURAN'),
+          _navItem(AppTab.settings),
+          _navItem(AppTab.help),
+        ];
+
+      case UserRole.pemilik:
+        return [
+          _groupTitle('PORTAL EKSEKUTIF PEMILIK'),
+          _navItem(AppTab.summary),
+          _navItem(AppTab.masterTarif),
+          _navItem(AppTab.payroll),
+          _navItem(AppTab.reports),
+          const SizedBox(height: 16),
+          _groupTitle('PREFERENSI'),
+          _navItem(AppTab.settings),
+          _navItem(AppTab.help),
+        ];
+
+      case UserRole.adminKeuangan:
+        return [
+          _groupTitle('HR & KEUANGAN'),
+          _navItem(AppTab.summary),
+          _navItem(AppTab.employees),
+          _navItem(AppTab.payroll),
+          _navItem(AppTab.attendance),
+          _navItem(AppTab.reimbursement),
+          _navItem(AppTab.reports),
+          const SizedBox(height: 16),
+          _groupTitle('PENGATURAN'),
+          _navItem(AppTab.settings),
+          _navItem(AppTab.help),
+        ];
+
+      case UserRole.mandor:
+        return [
+          _groupTitle('PORTAL LAPANGAN'),
+          _navItem(AppTab.mandorPortal),
+          _navItem(AppTab.attendance),
+          const SizedBox(height: 16),
+          _groupTitle('BANTUAN'),
+          _navItem(AppTab.help),
+        ];
+
+      case UserRole.karyawan:
+        return [
+          _groupTitle('PORTAL MANDIRI PEKERJA'),
+          _navItem(AppTab.karyawanPortal),
+          const SizedBox(height: 16),
+          _groupTitle('BANTUAN'),
+          _navItem(AppTab.help),
+        ];
+    }
+  }
+
   Widget _groupTitle(String title) {
     return Padding(
-      padding: const EdgeInsets.fromLTRB(10, 10, 10, 6),
+      padding: const EdgeInsets.fromLTRB(10, 8, 10, 6),
       child: Text(
         title,
         style: const TextStyle(
           fontSize: 10.5,
-          fontWeight: FontWeight.w600,
+          fontWeight: FontWeight.w700,
           color: AppColors.textSubtle,
           letterSpacing: 0.6,
         ),
@@ -333,34 +327,49 @@ class Sidebar extends StatelessWidget {
 
   Widget _navItem(AppTab tab) {
     final isSelected = currentTab == tab;
-    return Container(
-      margin: const EdgeInsets.symmetric(vertical: 1.5),
+
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 2),
       child: Material(
-        color: isSelected ? const Color(0xFFECFDF5) : Colors.transparent, // emerald-50
-        borderRadius: BorderRadius.circular(10),
+        color: Colors.transparent,
         child: InkWell(
-          borderRadius: BorderRadius.circular(10),
           onTap: () => onSelectTab(tab),
-          child: Padding(
-            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8.5),
+          borderRadius: BorderRadius.circular(10),
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 9),
+            decoration: BoxDecoration(
+              color: isSelected ? AppColors.emerald50 : Colors.transparent,
+              borderRadius: BorderRadius.circular(10),
+            ),
             child: Row(
               children: [
                 Icon(
                   tab.icon,
                   size: 18,
-                  color: isSelected ? AppColors.primary : AppColors.textMuted,
+                  color: isSelected ? AppColors.primary : AppColors.text2,
                 ),
-                const SizedBox(width: 12),
+                const SizedBox(width: 10),
                 Expanded(
                   child: Text(
                     tab.label,
                     style: TextStyle(
-                      fontSize: 13.5,
-                      fontWeight: isSelected ? FontWeight.w600 : FontWeight.w400,
+                      fontSize: 13,
+                      fontWeight: isSelected ? FontWeight.w600 : FontWeight.w500,
                       color: isSelected ? AppColors.primary : AppColors.text2,
                     ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
                   ),
                 ),
+                if (isSelected)
+                  Container(
+                    width: 5,
+                    height: 5,
+                    decoration: const BoxDecoration(
+                      color: AppColors.primary,
+                      shape: BoxShape.circle,
+                    ),
+                  ),
               ],
             ),
           ),

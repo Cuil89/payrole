@@ -152,8 +152,11 @@ class _ProcessPayrollModalState extends State<ProcessPayrollModal> {
                   color: AppColors.slate100,
                   borderRadius: BorderRadius.circular(10),
                 ),
-                child: Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                child: Wrap(
+                  alignment: WrapAlignment.spaceBetween,
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  spacing: 12,
+                  runSpacing: 8,
                   children: [
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -181,12 +184,15 @@ class _ProcessPayrollModalState extends State<ProcessPayrollModal> {
                           style: TextStyle(fontSize: 12, color: AppColors.textMuted),
                         ),
                         const SizedBox(height: 2),
-                        Text(
-                          Fmt.rupiah(selectedTotal),
-                          style: const TextStyle(
-                            fontSize: 16,
-                            fontWeight: FontWeight.w700,
-                            color: AppColors.primary,
+                        FittedBox(
+                          fit: BoxFit.scaleDown,
+                          child: Text(
+                            Fmt.rupiah(selectedTotal),
+                            style: const TextStyle(
+                              fontSize: 16,
+                              fontWeight: FontWeight.w700,
+                              color: AppColors.primary,
+                            ),
                           ),
                         ),
                       ],
@@ -377,14 +383,15 @@ class _ProcessPayrollModalState extends State<ProcessPayrollModal> {
               const SizedBox(height: 12),
 
               // Bottom Actions
-              Row(
-                mainAxisAlignment: MainAxisAlignment.end,
+              Wrap(
+                alignment: WrapAlignment.end,
+                spacing: 12,
+                runSpacing: 8,
                 children: [
                   OutlinedButton(
                     onPressed: () => Navigator.of(context).pop(),
                     child: const Text('Batal'),
                   ),
-                  const SizedBox(width: 12),
                   ElevatedButton.icon(
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.primary,

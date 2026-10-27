@@ -64,8 +64,9 @@ class _AttendancePageState extends State<AttendancePage> {
                               ),
                             ],
                           ),
-                          Row(
-                            mainAxisSize: MainAxisSize.min,
+                          Wrap(
+                            spacing: 10,
+                            runSpacing: 8,
                             children: [
                               OutlinedButton.icon(
                                 style: OutlinedButton.styleFrom(
@@ -85,7 +86,6 @@ class _AttendancePageState extends State<AttendancePage> {
                                   }
                                 },
                               ),
-                              const SizedBox(width: 10),
                               ElevatedButton.icon(
                                 style: ElevatedButton.styleFrom(
                                   backgroundColor: AppColors.primary,
@@ -112,14 +112,23 @@ class _AttendancePageState extends State<AttendancePage> {
                       const SizedBox(height: 20),
 
                       // Attendance Quick Stats
-                      Wrap(
-                        spacing: 16,
-                        runSpacing: 16,
-                        children: [
-                          _statBox('Hadir Hari Ini', '$presentCount karyawan', AppColors.primary, AppColors.emerald50),
-                          _statBox('Tidak Hadir / Izin', '$absentCount karyawan', AppColors.amber700, AppColors.amber50),
-                          _statBox('Total Terdaftar', '${employees.length} karyawan', AppColors.textStrong, AppColors.slate100),
-                        ],
+                      LayoutBuilder(
+                        builder: (context, constraints) {
+                          final isMobile = constraints.maxWidth < 650;
+                          return GridView.count(
+                            crossAxisCount: isMobile ? 1 : 3,
+                            crossAxisSpacing: 12,
+                            mainAxisSpacing: 12,
+                            shrinkWrap: true,
+                            physics: const NeverScrollableScrollPhysics(),
+                            childAspectRatio: isMobile ? 3.4 : 2.0,
+                            children: [
+                              _statBox('Hadir Hari Ini', '$presentCount karyawan', AppColors.primary, AppColors.emerald50),
+                              _statBox('Tidak Hadir / Izin', '$absentCount karyawan', AppColors.amber700, AppColors.amber50),
+                              _statBox('Total Terdaftar', '${employees.length} karyawan', AppColors.textStrong, AppColors.slate100),
+                            ],
+                          );
+                        },
                       ),
 
                       const SizedBox(height: 24),
@@ -220,8 +229,7 @@ class _AttendancePageState extends State<AttendancePage> {
 
   Widget _statBox(String title, String val, Color textC, Color bgC) {
     return Container(
-      width: 240,
-      padding: const EdgeInsets.all(16),
+      padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
         color: bgC,
         borderRadius: BorderRadius.circular(12),
@@ -229,10 +237,15 @@ class _AttendancePageState extends State<AttendancePage> {
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
+        mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          Text(title, style: TextStyle(fontSize: 12, color: textC, fontWeight: FontWeight.w500)),
-          const SizedBox(height: 6),
-          Text(val, style: TextStyle(fontSize: 20, fontWeight: FontWeight.w700, color: textC)),
+          Text(title, style: TextStyle(fontSize: 11.5, color: textC, fontWeight: FontWeight.w500), maxLines: 1, overflow: TextOverflow.ellipsis),
+          const SizedBox(height: 4),
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            alignment: Alignment.centerLeft,
+            child: Text(val, style: TextStyle(fontSize: 18, fontWeight: FontWeight.w700, color: textC)),
+          ),
         ],
       ),
     );

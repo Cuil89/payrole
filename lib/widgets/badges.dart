@@ -121,6 +121,13 @@ class AttendanceStatusBadge extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     switch (status) {
+      case AttendanceStatus.halfDay:
+        return const StatusBadge(
+          label: 'Setengah Hari',
+          backgroundColor: AppColors.amber50,
+          textColor: Color(0xFFB45309),
+          dotColor: Color(0xFFD97706),
+        );
       case AttendanceStatus.present:
         return const StatusBadge(
           label: 'Hadir',
@@ -160,6 +167,56 @@ class AttendanceStatusBadge extends StatelessWidget {
           textColor: AppColors.rose700,
         );
     }
+  }
+}
+
+enum BadgeTone {
+  emerald,
+  amber,
+  rose,
+  sky,
+  indigo,
+  neutral,
+}
+
+class BadgePill extends StatelessWidget {
+  const BadgePill({super.key, required this.label, this.tone = BadgeTone.neutral});
+
+  final String label;
+  final BadgeTone tone;
+
+  @override
+  Widget build(BuildContext context) {
+    Color bg;
+    Color fg;
+    Color? dot;
+    switch (tone) {
+      case BadgeTone.emerald:
+        bg = AppColors.emerald50;
+        fg = AppColors.primary700;
+        dot = AppColors.success;
+      case BadgeTone.amber:
+        bg = AppColors.amber50;
+        fg = AppColors.amber700;
+        dot = AppColors.amber600;
+      case BadgeTone.rose:
+        bg = AppColors.rose50;
+        fg = AppColors.rose700;
+        dot = AppColors.rose600;
+      case BadgeTone.sky:
+        bg = AppColors.sky50;
+        fg = AppColors.sky700;
+        dot = AppColors.sky700;
+      case BadgeTone.indigo:
+        bg = AppColors.indigo50;
+        fg = AppColors.indigo700;
+        dot = AppColors.indigo700;
+      case BadgeTone.neutral:
+        bg = AppColors.slate100;
+        fg = AppColors.text2;
+        dot = null;
+    }
+    return StatusBadge(label: label, backgroundColor: bg, textColor: fg, dotColor: dot);
   }
 }
 

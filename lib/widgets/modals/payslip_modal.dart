@@ -47,34 +47,39 @@ class PayslipModal extends StatelessWidget {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Row(
-                    children: [
-                      Container(
-                        width: 36,
-                        height: 36,
-                        decoration: BoxDecoration(
-                          color: AppColors.primary,
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                        alignment: Alignment.center,
-                        child: const Icon(
-                          AppIcons.fileText,
-                          color: Colors.white,
-                          size: 18,
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Column(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          const Text('Slip Gaji Karyawan', style: AppText.sectionTitle),
-                          Text(
-                            'Periode: ${store.periodLabel}',
-                            style: AppText.small,
+                  Expanded(
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 36,
+                          height: 36,
+                          decoration: BoxDecoration(
+                            color: AppColors.primary,
+                            borderRadius: BorderRadius.circular(10),
                           ),
-                        ],
-                      ),
-                    ],
+                          alignment: Alignment.center,
+                          child: const Icon(
+                            AppIcons.fileText,
+                            color: Colors.white,
+                            size: 18,
+                          ),
+                        ),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              const Text('Slip Gaji Karyawan', style: AppText.sectionTitle, overflow: TextOverflow.ellipsis),
+                              Text(
+                                'Periode: ${store.periodLabel}',
+                                style: AppText.small,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ],
+                    ),
                   ),
                   IconButton(
                     icon: const Icon(AppIcons.close, size: 18),
@@ -235,20 +240,24 @@ class PayslipModal extends StatelessWidget {
               const SizedBox(height: 12),
 
               // Action Buttons
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              Wrap(
+                spacing: 12,
+                runSpacing: 8,
+                alignment: WrapAlignment.spaceBetween,
+                crossAxisAlignment: WrapCrossAlignment.center,
                 children: [
                   Text(
                     'Tanggal gajian: ${Fmt.date(store.payday)}',
                     style: AppText.tiny,
                   ),
-                  Row(
+                  Wrap(
+                    spacing: 10,
+                    runSpacing: 8,
                     children: [
                       OutlinedButton(
                         onPressed: () => Navigator.of(context).pop(),
                         child: const Text('Tutup'),
                       ),
-                      const SizedBox(width: 10),
                       ElevatedButton.icon(
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppColors.primary,

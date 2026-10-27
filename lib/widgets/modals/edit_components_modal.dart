@@ -137,16 +137,20 @@ class _EditComponentsModalState extends State<EditComponentsModal> {
                 Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text('Edit Komponen Gaji', style: AppText.sectionTitle),
-                        Text(
-                          '${widget.employee.name} (${widget.employee.id} · ${widget.employee.department})',
-                          style: AppText.small,
-                        ),
-                      ],
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          const Text('Edit Komponen Gaji', style: AppText.sectionTitle),
+                          Text(
+                            '${widget.employee.name} (${widget.employee.id} · ${widget.employee.department})',
+                            style: AppText.small,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ],
+                      ),
                     ),
+                    const SizedBox(width: 8),
                     IconButton(
                       icon: const Icon(AppIcons.close, size: 18),
                       onPressed: () => Navigator.of(context).pop(),
@@ -205,8 +209,11 @@ class _EditComponentsModalState extends State<EditComponentsModal> {
                         const SizedBox(height: 16),
 
                         // BPJS & Taxes
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        Wrap(
+                          alignment: WrapAlignment.spaceBetween,
+                          crossAxisAlignment: WrapCrossAlignment.center,
+                          spacing: 8,
+                          runSpacing: 4,
                           children: [
                             const Text('Potongan Statuter & Pajak', style: AppText.bodyStrong),
                             TextButton.icon(
@@ -333,14 +340,15 @@ class _EditComponentsModalState extends State<EditComponentsModal> {
                 const SizedBox(height: 12),
 
                 // Buttons
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
+                Wrap(
+                  alignment: WrapAlignment.end,
+                  spacing: 12,
+                  runSpacing: 8,
                   children: [
                     OutlinedButton(
                       onPressed: () => Navigator.of(context).pop(),
                       child: const Text('Batal'),
                     ),
-                    const SizedBox(width: 12),
                     ElevatedButton(
                       style: ElevatedButton.styleFrom(
                         backgroundColor: AppColors.primary,
@@ -394,20 +402,27 @@ class _EditComponentsModalState extends State<EditComponentsModal> {
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(
-            label,
-            style: TextStyle(
-              fontSize: 12.5,
-              fontWeight: isBold ? FontWeight.w600 : FontWeight.w400,
-              color: AppColors.text2,
+          Expanded(
+            child: Text(
+              label,
+              style: TextStyle(
+                fontSize: 12.5,
+                fontWeight: isBold ? FontWeight.w600 : FontWeight.w400,
+                color: AppColors.text2,
+              ),
+              overflow: TextOverflow.ellipsis,
             ),
           ),
-          Text(
-            value,
-            style: TextStyle(
-              fontSize: 13,
-              fontWeight: isBold ? FontWeight.w700 : FontWeight.w600,
-              color: color ?? AppColors.textStrong,
+          const SizedBox(width: 8),
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Text(
+              value,
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: isBold ? FontWeight.w700 : FontWeight.w600,
+                color: color ?? AppColors.textStrong,
+              ),
             ),
           ),
         ],

@@ -269,6 +269,7 @@ class _EmployeesPageState extends State<EmployeesPage> {
                   ),
                   const SizedBox(height: 12),
                   DropdownButtonFormField<String>(
+                    isExpanded: true,
                     initialValue: selectedDept,
                     decoration: const InputDecoration(labelText: 'Departemen'),
                     items: kDepartments.map((d) => DropdownMenuItem(value: d, child: Text(d))).toList(),
@@ -294,36 +295,61 @@ class _EmployeesPageState extends State<EmployeesPage> {
                     validator: (v) => v == null || v.length < 8 ? 'Nomor telepon 8-15 digit' : null,
                   ),
                   const SizedBox(height: 12),
-                  Row(
-                    children: [
-                      Expanded(
-                        child: TextFormField(
-                          controller: baseCtrl,
-                          decoration: const InputDecoration(labelText: 'Gaji Pokok', prefixText: 'Rp '),
-                          keyboardType: TextInputType.number,
-                          inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Expanded(
-                        child: TextFormField(
-                          controller: allowCtrl,
-                          decoration: const InputDecoration(labelText: 'Tunjangan', prefixText: 'Rp '),
-                          keyboardType: TextInputType.number,
-                          inputFormatters: [FilteringTextInputFormatter.digitsOnly],
-                        ),
-                      ),
-                    ],
+                  LayoutBuilder(
+                    builder: (context, boxConstraints) {
+                      final stackSalary = boxConstraints.maxWidth < 380;
+                      if (stackSalary) {
+                        return Column(
+                          children: [
+                            TextFormField(
+                              controller: baseCtrl,
+                              decoration: const InputDecoration(labelText: 'Gaji Pokok', prefixText: 'Rp '),
+                              keyboardType: TextInputType.number,
+                              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                            ),
+                            const SizedBox(height: 12),
+                            TextFormField(
+                              controller: allowCtrl,
+                              decoration: const InputDecoration(labelText: 'Tunjangan', prefixText: 'Rp '),
+                              keyboardType: TextInputType.number,
+                              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                            ),
+                          ],
+                        );
+                      }
+                      return Row(
+                        children: [
+                          Expanded(
+                            child: TextFormField(
+                              controller: baseCtrl,
+                              decoration: const InputDecoration(labelText: 'Gaji Pokok', prefixText: 'Rp '),
+                              keyboardType: TextInputType.number,
+                              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                            ),
+                          ),
+                          const SizedBox(width: 12),
+                          Expanded(
+                            child: TextFormField(
+                              controller: allowCtrl,
+                              decoration: const InputDecoration(labelText: 'Tunjangan', prefixText: 'Rp '),
+                              keyboardType: TextInputType.number,
+                              inputFormatters: [FilteringTextInputFormatter.digitsOnly],
+                            ),
+                          ),
+                        ],
+                      );
+                    },
                   ),
                   const SizedBox(height: 24),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.end,
+                  Wrap(
+                    alignment: WrapAlignment.end,
+                    spacing: 10,
+                    runSpacing: 8,
                     children: [
                       OutlinedButton(
                         onPressed: () => Navigator.of(context).pop(),
                         child: const Text('Batal'),
                       ),
-                      const SizedBox(width: 10),
                       ElevatedButton(
                         style: ElevatedButton.styleFrom(
                           backgroundColor: AppColors.primary,

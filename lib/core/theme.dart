@@ -77,6 +77,7 @@ abstract final class AppText {
     color: AppColors.textStrong,
     letterSpacing: -0.2,
   );
+  static const cardTitle = sectionTitle;
   static const body = TextStyle(
     fontFamily: _f,
     fontSize: 14,
